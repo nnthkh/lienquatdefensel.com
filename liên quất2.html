@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liên Quất Defense - Meme Edition</title>
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --accent: #ff0055;
+            --bg: #02020a;
+            --panel: rgba(15, 15, 35, 0.9);
+            --border: rgba(0, 242, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body {
+            background-color: var(--bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* --- Screens --- */
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            background: radial-gradient(circle at center, #0a0a25 0%, #020205 100%);
+        }
+        .screen.active { display: flex; }
+
+        .logo-title {
+            font-size: 4rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            background: linear-gradient(to bottom, #fff 20%, var(--primary) 50%, var(--secondary) 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+            filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.6));
+            text-transform: uppercase;
+        }
+
+        .menu-btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border: 1px solid var(--border);
+            color: white;
+            padding: 18px 50px;
+            margin: 12px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 280px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+            transform: scale(1.05);
+            background: rgba(0, 242, 255, 0.1);
+        }
+
+        .grid-container { display: flex; gap: 25px; margin: 30px; }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 30px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.4s;
+            width: 200px;
+            text-align: center;
+            position: relative;
+        }
+        .card:hover { border-color: var(--primary); box-shadow: 0 0 25px var(--primary); transform: translateY(-10px); }
+        .card h3 { font-size: 1.2rem; margin: 15px 0 5px; color: var(--primary); }
+        .card p { font-size: 0.8rem; opacity: 0.8; }
+
+        /* --- Game UI --- */
+        #gameWrapper {
+            display: none;
+            gap: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: #000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        #gameWrapper.active { display: flex; }
+
+        canvas { 
+            background: #020208; 
+            border-radius: 8px; 
+            border: 1px solid #1a1a3a;
+            box-shadow: inset 0 0 100px rgba(0, 242, 255, 0.05);
+        }
+
+        /* --- HUD Overlay --- */
+        #hud {
+            position: absolute;
+            top: 35px;
+            left: 35px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .hud-item {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            padding: 8px 15px;
+            border-radius: 4px;
+            border-left: 4px solid var(--primary);
+            font-weight: 900;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 140px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+        }
+
+        #sidebar { width: 280px; display: flex; flex-direction: column; gap: 15px; }
+        
+        .tower-btn {
+            background: #0a0a1a; border: 1px solid #1a1a3a;
+            padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; 
+            color: #ccc; width: 100%; border-radius: 6px; transition: 0.2s;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+        .tower-btn:hover { border-color: var(--primary); color: white; }
+        .tower-btn.active { border-color: var(--primary); background: rgba(0, 242, 255, 0.1); color: white; }
+
+        .control-panel { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ctrl-btn { 
+            flex: 1; min-width: 80px; padding: 10px; border-radius: 4px; border: 1px solid #1a1a3a; 
+            background: #050510; color: #888; cursor: pointer; font-size: 0.75rem; font-weight: bold;
+        }
+        .ctrl-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(0,242,255,0.05); }
+
+        #waveBtn {
+            padding: 15px; 
+            background: linear-gradient(45deg, #7000ff, #ff0055);
+            border: none; border-radius: 6px; color: white; 
+            font-weight: 900; font-size: 0.9rem; cursor: pointer; 
+            margin-top: auto; letter-spacing: 2px;
+            box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
+        }
+        #waveBtn:hover { filter: brightness(1.2); transform: scale(1.02); }
+
+        .back-btn { position: absolute; top: 30px; left: 30px; background: none; border: none; color: #555; cursor: pointer; font-weight: bold; letter-spacing: 2px; }
+        .back-btn:hover { color: white; }
+        
+        #upgradeBtn:disabled {
+            background: #333 !important;
+            color: #777 !important;
+            cursor: not-allowed;
+        }
+
+        /* Settings Style */
+        .settings-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: left;
+        }
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Win/Loss Screens */
+        .result-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .result-screen.active { display: flex; }
+        
+        .result-title {
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+        }
+        .victory-text {
+            color: #00f2ff;
+            text-shadow: 0 0 30px rgba(0, 242, 255, 0.8);
+        }
+        .lost-text {
+            color: #ff0055;
+            text-shadow: 0 0 30px rgba(255, 0, 85, 0.8);
+        }
+
+        /* Pause Menu */
+        #pauseMenu {
+            position: absolute;
+            inset: 0;
+            z-index: 150;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        #pauseMenu.active { display: flex; }
+        
+        .pause-title {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 40px;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.6);
+            letter-spacing: 5px;
+        }
+
+        /* Mobile adjustments */
+        @media only screen and (max-width: 1024px) {
+            #gameWrapper {
+                flex-direction: column;
+                align-items: center;
+                padding: 10px;
+            }
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+            #sidebar {
+                width: 100%;
+                max-width: 300px;
+            }
+            .hud-item {
+                font-size: 0.9rem;
+                padding: 6px 12px;
+            }
+            .logo-title {
+                font-size: 3rem;
+            }
+            .menu-btn {
+                padding: 14px 40px;
+                font-size: 1rem;
+                min-width: 240px;
+            }
+            .card {
+                width: 160px;
+                padding: 20px 15px;
+            }
+            .card h3 {
+                font-size: 1rem;
+            }
+            .card p {
+                font-size: 0.7rem;
+            }
+        }
+
+        @media only screen and (orientation: portrait) and (max-width: 1024px) {
+            body::before {
+                content: "Vui lòng xoay thiết bị sang chiều ngang để chơi.";
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background: var(--bg);
+                color: white;
+                font-size: 1.5rem;
+                text-align: center;
+                position: fixed;
+                width: 100%;
+                z-index: 9999;
+                padding: 20px;
+            }
+            #gameWrapper, .screen {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="mainMenu" class="screen active">
+    <h1 class="logo-title">LIÊN QUẤT DEFENSE</h1>
+    <button class="menu-btn" onclick="showScreen('mapSelect')">BẮT ĐẦU CHIẾN DỊCH</button>
+    <button class="menu-btn" onclick="showScreen('settingsMenu')">CÀI ĐẶT</button>
+</div>
+
+<div id="settingsMenu" class="screen">
+    <button class="back-btn" onclick="showScreen('mainMenu')">← QUAY LẠI</button>
+    <h2 style="margin-bottom: 40px; letter-spacing: 5px;">TÙY CHỈNH</h2>
+    <div class="settings-panel">
+        <div class="setting-row">
+            <span>HIỆU ỨNG HẠT</span>
+            <input type="checkbox" id="setParticles" checked>
+        </div>
+        <div class="setting-row">
+            <span>ÂM THANH</span>
+            <input type="checkbox" id="setSound" checked>
+        </div>
+    </div>
+</div>
+
+<div id="mapSelect" class="screen">
+    <button class="back-btn" onclick="showScreen('mainMenu')">← QUAY LẠI</button>
+    <h2 style="margin-bottom: 40px; letter-spacing: 5px; opacity: 0.8;">CHỌN CHIẾN TRƯỜNG</h2>
+    <div class="grid-container">
+        <div class="card" onclick="selectMap('abyss')">
+            <div style="font-size: 3.5rem;">🕳️</div>
+            <h3>VỰC THẲM</h3>
+            <p>Đường dài, dễ thủ</p>
+        </div>
+        <div class="card" onclick="selectMap('forest')">
+            <div style="font-size: 3.5rem;">🌲</div>
+            <h3>RỪNG THIÊNG</h3>
+            <p>Lắt léo, trung bình</p>
+        </div>
+        <div class="card" onclick="selectMap('island')">
+            <div style="font-size: 3.5rem;">🗿</div>
+            <h3>ĐẢO CỔ</h3>
+            <p>Đường ngắn, kịch tính</p>
+        </div>
+    </div>
+</div>
+
+<div id="diffSelect" class="screen">
+    <button class="back-btn" onclick="showScreen('mapSelect')">← QUAY LẠI</button>
+    <h2 id="diffTitle" style="margin-bottom: 40px; letter-spacing: 5px; opacity: 0.8;">MỨC ĐỘ NGUY HIỂM</h2>
+    <div class="grid-container">
+        <div class="card" onclick="startGame('easy')">
+            <h3 style="color: #00f2ff">DỄ</h3>
+            <p>Vàng +50%<br>Máu quái -20%</p>
+        </div>
+        <div class="card" onclick="startGame('normal')">
+            <h3 style="color: #7000ff">THƯỜNG</h3>
+            <p>Chế độ chuẩn</p>
+        </div>
+        <div class="card" onclick="startGame('hard')">
+            <h3 style="color: #ff0055">KHÓ</h3>
+            <p>Vàng -20%<br>Máu quái +40%</p>
+        </div>
+        <div class="card" onclick="startGame('endless')">
+            <h3 style="color: #ffcc00">VÔ TẬN</h3>
+            <p>Không giới hạn wave<br>Thử thách khả năng</p>
+        </div>
+    </div>
+</div>
+
+<!-- Victory/Lost Overlays -->
+<div id="victoryScreen" class="result-screen">
+    <h2 class="result-title victory-text">VICTORY</h2>
+    <p style="font-size: 1.2rem; color: #ccc; margin-bottom: 30px;">Bạn đã bảo vệ thành công căn cứ!</p>
+    <button class="menu-btn" onclick="location.reload()">CHƠI LẠI</button>
+</div>
+
+<div id="lostScreen" class="result-screen">
+    <h2 class="result-title lost-text">LOST</h2>
+    <p style="font-size: 1.2rem; color: #ccc; margin-bottom: 30px;">Căn cứ đã bị quái vật phá hủy...</p>
+    <button class="menu-btn" onclick="location.reload()">THỬ LẠI</button>
+</div>
+
+<!-- Pause Menu -->
+<div id="pauseMenu">
+    <h2 class="pause-title">ĐÃ TẠM DỪNG</h2>
+    <button class="menu-btn" onclick="resumeGame()">TIẾP TỤC</button>
+    <button class="menu-btn" onclick="exitGame()">THOÁT</button>
+</div>
+
+<div id="gameWrapper">
+    <div id="canvasContainer" style="position: relative;">
+        <canvas id="gameCanvas" width="850" height="600"></canvas>
+        <div id="hud">
+            <div class="hud-item" style="border-color: #ffcc00;">
+                <span>💰</span> <span id="goldDisp">0</span>
+            </div>
+            <div class="hud-item" style="border-color: #ff0055;">
+                <span>❤️</span> <span id="healthDisp">0</span>
+            </div>
+            <div class="hud-item" style="border-color: #00f2ff;">
+                <span>🌊</span> <span id="waveDisp">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <div class="control-panel">
+            <button class="ctrl-btn" id="btnSpeed">TỐC ĐỘ X1</button>
+            <button class="ctrl-btn" id="btnPause">TẠM DỪNG</button>
+            <button class="ctrl-btn" id="btnAuto">AUTO: OFF</button>
+        </div>
+
+        <div style="margin-top: 5px; flex-grow: 1; overflow-y: auto; max-height: 400px;">
+            <p style="font-size: 0.65rem; color: #555; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase;">Kho vũ khí</p>
+            <button class="tower-btn" data-type="basic">👤 TÚ SIGMA <span style="margin-left:auto; color: #ffcc00;">50</span></button>
+            <button class="tower-btn" data-type="sniper">🔫 CHỦ DƯƠNG ROBLOX <span style="margin-left:auto; color: #ffcc00;">120</span></button>
+            <button class="tower-btn" data-type="slow">💩 ĂN CỨT(CHẬM) <span style="margin-left:auto; color: #ffcc00;">90</span></button>
+            <button class="tower-btn" data-type="fire">🔥 FREE FIRE <span style="margin-left:auto; color: #ffcc00;">180</span></button>
+            <button class="tower-btn" data-type="bomb">🍚 CƠM RANG <span style="margin-left:auto; color: #ffcc00;">220</span></button>
+            <button class="tower-btn" data-type="farm">🍕 GÂU GÂU TRUNG LONG <span style="margin-left:auto; color: #ffcc00;">200</span></button>
+        </div>
+
+        <div id="infoPanel" style="background: rgba(255,255,255,0.03); border: 1px solid #1a1a3a; border-radius: 8px; padding: 12px; display: none;">
+            <div id="infoTitle" style="font-weight: 900; color: var(--primary); font-size: 0.85rem; margin-bottom: 5px;"></div>
+            <div id="infoStats" style="font-size: 0.75rem; color: #aaa; margin-bottom: 10px; line-height: 1.4;"></div>
+            
+            <div id="targetingPanel" style="margin-bottom: 10px; display: none;">
+                <p style="font-size: 0.7rem; color: #888; margin-bottom: 5px;">CHỌN MỤC TIÊU:</p>
+                <select id="targetingSelect" style="width:100%; padding:6px; border-radius:4px; background:#0a0a1a; color:#ccc; border:1px solid #1a1a3a; font-size:0.75rem; cursor:pointer;">
+                    <option value="first">Đầu tiên (xa nhất)</option>
+                    <option value="last">Cuối cùng (gần nhất)</option>
+                    <option value="strong">Mạnh nhất (HP cao)</option>
+                    <option value="weak">Yếu nhất (HP thấp)</option>
+                    <option value="close">Gần tháp nhất</option>
+                    <option value="random">Ngẫu nhiên</option>
+                </select>
+            </div>
+            
+            <button id="upgradeBtn" style="width:100%; background: #00cc66; color:white; border:none; padding:8px; border-radius:4px; font-weight:bold; cursor:pointer; margin-bottom:5px;">NÂNG CẤP</button>
+            <button id="sellBtn" style="width:100%; background: rgba(255,0,0,0.2); color:#ff4444; border:1px solid #ff4444; padding:6px; border-radius:4px; font-weight:bold; cursor:pointer;">BÁN THÁP</button>
+        </div>
+
+        <button id="waveBtn">KÍCH HOẠT WAVE</button>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const MAX_WAVES = 20;
+
+const MAP_DATA = {
+    abyss: { 
+        path: [{x: -50, y: 150}, {x: 650, y: 150}, {x: 650, y: 450}, {x: 900, y: 450}], 
+        base: {x: 800, y: 450}, mult: 1.0, color: '#004466', name: 'VỰC THẲM',
+        decor: [{x: 200, y: 300}, {x: 500, y: 350}, {x: 100, y: 500}, {x: 750, y: 100}]
+    },
+    forest: { 
+        path: [{x: -50, y: 300}, {x: 200, y: 300}, {x: 200, y: 100}, {x: 600, y: 100}, {x: 600, y: 500}, {x: 900, y: 500}], 
+        base: {x: 820, y: 500}, mult: 1.25, color: '#004422', name: 'RỪNG THIÊNG',
+        decor: [{x: 100, y: 100}, {x: 400, y: 300}, {x: 750, y: 250}, {x: 350, y: 500}]
+    },
+    island: { 
+        path: [{x: 425, y: -50}, {x: 425, y: 200}, {x: 150, y: 200}, {x: 150, y: 450}, {x: 700, y: 450}, {x: 700, y: 250}, {x: 900, y: 250}], 
+        base: {x: 830, y: 250}, mult: 1.6, color: '#442200', name: 'ĐẢO CỔ',
+        decor: [{x: 50, y: 50}, {x: 750, y: 550}, {x: 450, y: 400}, {x: 100, y: 550}]
+    }
+};
+
+const DIFF_DATA = {
+    easy: { gold: 400, health: 30, hpMult: 0.8, countMult: 0.7 },
+    normal: { gold: 250, health: 20, hpMult: 1.0, countMult: 1.0 },
+    hard: { gold: 180, health: 15, hpMult: 1.4, countMult: 1.3 },
+    endless: { gold: 250, health: 20, hpMult: 1.0, countMult: 1.0 }
+};
+
+const TOWER_TYPES = {
+    basic: { name: '👤 TÚ SIGMA', cost: 50, damage: 25, range: 140, fireRate: 35, color: '#00f2ff', maxLevel: 10, targeting: 'first' },
+    sniper: { name: '🔫 CHỦ DƯƠNG ROBLOX', cost: 120, damage: 100, range: 350, fireRate: 90, color: '#ff0055', maxLevel: 20, targeting: 'first' },
+    slow: { name: '💩 ĂN CỨT(CHẬM)', cost: 90, damage: 15, range: 120, fireRate: 30, color: '#7000ff', isSlow: true, maxLevel: 15, targeting: 'first' },
+    fire: { name: '🔥 FREE FIRE', cost: 180, damage: 2, range: 120, fireRate: 2, color: '#ff6600', isAoe: true, aoeAngle: 40, maxLevel: 15, targeting: 'first' },
+    bomb: { name: '🍚 CƠM RANG', cost: 220, damage: 45, range: 180, fireRate: 110, color: '#ffff00', isExplosive: true, splashRadius: 50, maxLevel: 20, targeting: 'first' },
+    farm: { name: '🍕 GÂU GÂU TRUNG LONG', cost: 200, damage: 0, range: 50, fireRate: 300, color: '#66ff66', isFarm: true, goldPerTick: 15, maxLevel: 15, targeting: 'none' }
+};
+
+const state = {
+    currentMap: 'abyss',
+    difficulty: 'normal',
+    gold: 250, health: 20, wave: 0,
+    speed: 1, auto: false, paused: false, gameOver: false,
+    waveActive: false,
+    selectedType: null, inspecting: null,
+    mouseX: 0, mouseY: 0,
+    enemies: [], towers: [], projectiles: [], particles: [],
+    spawnTimer: null
+};
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('gameWrapper').classList.remove('active');
+    document.getElementById(id).classList.add('active');
+}
+
+function selectMap(id) {
+    state.currentMap = id;
+    document.getElementById('diffTitle').textContent = `ĐỘ KHÓ - ${MAP_DATA[id].name}`;
+    showScreen('diffSelect');
+}
+
+function startGame(diff) {
+    state.difficulty = diff;
+    const d = DIFF_DATA[diff];
+    state.gold = d.gold;
+    state.health = d.health;
+    state.wave = 0;
+    state.gameOver = false;
+    state.enemies = []; state.towers = []; state.projectiles = []; state.particles = [];
+    state.waveActive = false;
+    state.paused = false;
+    document.getElementById('btnPause').textContent = "TẠM DỪNG";
+    document.getElementById('pauseMenu').classList.remove('active');
+    clearInterval(state.spawnTimer);
+    
+    document.getElementById('diffSelect').classList.remove('active');
+    document.getElementById('gameWrapper').classList.add('active');
+    updateUI();
+    resizeCanvas();
+}
+
+function triggerGameOver() {
+    state.gameOver = true;
+    document.getElementById('lostScreen').classList.add('active');
+}
+
+function triggerVictory() {
+    state.gameOver = true;
+    document.getElementById('victoryScreen').classList.add('active');
+}
+
+function resumeGame() {
+    state.paused = false;
+    document.getElementById('pauseMenu').classList.remove('active');
+    document.getElementById('btnPause').textContent = "TẠM DỪNG";
+    document.getElementById('btnPause').classList.remove('active');
+}
+
+function exitGame() {
+    location.reload();
+}
+
+class Enemy {
+    constructor(wave) {
+        const m = MAP_DATA[state.currentMap];
+        const d = DIFF_DATA[state.difficulty];
+        this.distance = 0;
+        this.type = (wave % 10 === 0) ? 'boss' : (wave >= 3 && Math.random() < 0.2 ? 'runner' : 'normal');
+        
+        let earlyNudge = wave < 5 ? 0.75 : 1.0;
+        let hMult = Math.pow(1.22, wave) * m.mult * d.hpMult * earlyNudge;
+        
+        if(this.type === 'boss') {
+            this.maxHp = 20000; this.speed = 0.5; this.size = 28; this.color = '#ff0055'; this.reward = 200;
+        } else if(this.type === 'runner') {
+            this.maxHp = 35 * hMult; this.speed = 3.5; this.size = 10; this.color = '#ffcc00'; this.reward = 18;
+        } else {
+            this.maxHp = 60 * hMult; this.speed = 1.4; this.size = 14; this.color = '#00ff88'; this.reward = 15;
+        }
+        this.hp = this.maxHp;
+        this.baseSpeed = this.speed;
+        this.slowTimer = 0;
+        this.path = m.path;
+        this.x = this.path[0].x; this.y = this.path[0].y;
+    }
+
+    update() {
+        if (state.paused || state.gameOver) return;
+        if (this.slowTimer > 0) {
+            this.slowTimer--;
+            if (this.slowTimer <= 0) this.speed = this.baseSpeed;
+        }
+
+        for(let i=0; i<state.speed; i++) {
+            this.distance += this.speed;
+            let d = this.distance;
+            for (let j=0; j < this.path.length-1; j++) {
+                let p1 = this.path[j], p2 = this.path[j+1];
+                let seg = Math.abs(p2.x-p1.x) + Math.abs(p2.y-p1.y);
+                if (d <= seg) {
+                    if (p1.x === p2.x) { this.x = p1.x; this.y = p1.y + (p2.y > p1.y ? d : -d); }
+                    else { this.y = p1.y; this.x = p1.x + (p2.x > p1.x ? d : -d); }
+                    break;
+                }
+                d -= seg;
+            }
+        }
+        if (this.distance > 2000) {
+            state.health -= (this.type === 'boss' ? 10 : 1);
+            this.hp = -1;
+            updateUI();
+            if (state.health <= 0) { triggerGameOver(); }
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.slowTimer > 0 ? '#00f2ff' : this.color;
+        
+        if(this.type === 'normal') {
+            // Vẽ nhân vật hotdog
+            ctx.fillStyle = this.slowTimer > 0 ? '#00f2ff' : '#D2691E';
+            
+            // Thân hotdog
+            ctx.beginPath();
+            ctx.ellipse(this.x, this.y, this.size * 0.5, this.size * 1.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Mặt
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.ellipse(this.x, this.y - this.size * 0.3, this.size * 0.4, this.size * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Mắt
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(this.x - 3, this.y - this.size * 0.4, 3, 0, Math.PI * 2);
+            ctx.arc(this.x + 3, this.y - this.size * 0.4, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(this.x - 3, this.y - this.size * 0.4, 1.5, 0, Math.PI * 2);
+            ctx.arc(this.x + 3, this.y - this.size * 0.4, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Miệng
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y - this.size * 0.2, 2, 0, Math.PI);
+            ctx.stroke();
+            
+            // Chân
+            ctx.fillStyle = this.slowTimer > 0 ? '#00f2ff' : '#8B4513';
+            ctx.fillRect(this.x - 3, this.y + this.size * 0.8, 2, this.size * 0.5);
+            ctx.fillRect(this.x + 1, this.y + this.size * 0.8, 2, this.size * 0.5);
+            
+            // Tên "TÙNG SAHUR" trên đầu
+            ctx.shadowBlur = 0;
+            ctx.font = 'bold 8px Arial';
+            ctx.fillStyle = '#FFD700';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.strokeText('TÙNG SAHUR', this.x, this.y - this.size * 1.8);
+            ctx.fillText('TÙNG SAHUR', this.x, this.y - this.size * 1.8);
+            
+        } else if(this.type === 'runner') {
+            // Vẽ cá mập xanh
+            ctx.fillStyle = this.slowTimer > 0 ? '#00f2ff' : '#1E90FF';
+            
+            // Thân cá mập
+            ctx.beginPath();
+            ctx.ellipse(this.x, this.y, this.size * 1.2, this.size * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Đầu cá mập (nhọn)
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.size * 1.2, this.y);
+            ctx.lineTo(this.x + this.size * 1.8, this.y - this.size * 0.3);
+            ctx.lineTo(this.x + this.size * 1.8, this.y + this.size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Vây lưng
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y - this.size * 0.8);
+            ctx.lineTo(this.x - this.size * 0.3, this.y - this.size * 1.5);
+            ctx.lineTo(this.x + this.size * 0.3, this.y - this.size * 0.8);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Vây bên
+            ctx.fillStyle = this.slowTimer > 0 ? '#00d4ff' : '#4169E1';
+            ctx.beginPath();
+            ctx.moveTo(this.x - this.size * 0.5, this.y);
+            ctx.lineTo(this.x - this.size * 1.2, this.y + this.size * 0.8);
+            ctx.lineTo(this.x - this.size * 0.2, this.y + this.size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Mắt
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(this.x + this.size * 0.8, this.y - this.size * 0.3, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(this.x + this.size * 0.8, this.y - this.size * 0.3, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Răng
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            for(let i = 0; i < 3; i++) {
+                ctx.moveTo(this.x + this.size * 1.5 + i * 2, this.y - 2);
+                ctx.lineTo(this.x + this.size * 1.5 + i * 2, this.y + 2);
+            }
+            ctx.stroke();
+            
+            // Tên "Tralalero Tralala" trên đầu
+            ctx.shadowBlur = 0;
+            ctx.font = 'bold 7px Arial';
+            ctx.fillStyle = '#FFD700';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.strokeText('Tralalero Tralala', this.x, this.y - this.size * 2);
+            ctx.fillText('Tralalero Tralala', this.x, this.y - this.size * 2);
+            
+        } else if(this.type === 'boss') {
+            // Boss - Logo Roblox
+            const size = this.size;
+            
+            // Nền xanh Roblox
+            ctx.fillStyle = this.slowTimer > 0 ? '#00f2ff' : '#0066FF';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#0066FF';
+            
+            // Hình vuông xoay 45 độ (kim cương)
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(Math.PI / 4);
+            
+            // Viền bo tròn
+            const rectSize = size * 1.8;
+            ctx.beginPath();
+            ctx.roundRect(-rectSize/2, -rectSize/2, rectSize, rectSize, 8);
+            ctx.fill();
+            
+            // Hình vuông trắng bên trong (logo Roblox)
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.roundRect(-size/2, -size/2, size, size, 3);
+            ctx.fill();
+            
+            // Lỗ vuông xanh ở giữa
+            ctx.fillStyle = '#0066FF';
+            const holeSize = size * 0.35;
+            ctx.fillRect(-holeSize/2, -holeSize/2, holeSize, holeSize);
+            
+            ctx.restore();
+            
+            // Tên "CHÍ DƯƠNG ROBLOX CALO" trên đầu
+            ctx.shadowBlur = 0;
+            ctx.font = 'bold 9px Arial';
+            ctx.fillStyle = '#FF0000';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            ctx.strokeText('CHÍ DƯƠNG ROBLOX CALO', this.x, this.y - this.size * 2.5);
+            ctx.fillText('CHÍ DƯƠNG ROBLOX CALO', this.x, this.y - this.size * 2.5);
+        }
+        
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(this.x-15, this.y-this.size-12, 30, 4);
+        if(this.type === 'normal') {
+            ctx.fillStyle = '#D2691E';
+        } else if(this.type === 'runner') {
+            ctx.fillStyle = '#1E90FF';
+        } else if(this.type === 'boss') {
+            ctx.fillStyle = '#0066FF';
+        } else {
+            ctx.fillStyle = this.color;
+        }
+        ctx.fillRect(this.x-15, this.y-this.size-12, 30*(this.hp/this.maxHp), 4);
+        ctx.restore();
+    }
+
+    isBoss() {
+        return this.type === 'boss';
+    }
+}
+
+function createParticles(x, y, color, count = 8) {
+    if(!document.getElementById('setParticles').checked) return;
+    for(let i=0; i<count; i++) {
+        state.particles.push({
+            x: x, y: y, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, 
+            life: 20 + Math.random()*20, color: color
+        });
+    }
+}
+
+function startWave() {
+    if (state.waveActive || state.paused || state.gameOver) return;
+    state.wave++;
+    state.waveActive = true;
+    updateUI();
+    const d = DIFF_DATA[state.difficulty];
+    
+    // Wave boss: chỉ 1 boss + quái nhỏ
+    const isBossWave = state.wave % 10 === 0;
+    let count;
+    
+    if(isBossWave) {
+        count = 1;
+    } else {
+        count = Math.ceil((6 + state.wave * 1.8) * d.countMult);
+    }
+    
+    let spawned = 0;
+    let bossSpawned = false;
+    
+    state.spawnTimer = setInterval(() => {
+        if(state.paused || state.gameOver) return;
+        
+        // Spawn boss đầu tiên nếu là boss wave
+        if(isBossWave && !bossSpawned) {
+            state.enemies.push(new Enemy(state.wave));
+            bossSpawned = true;
+            spawned++;
+        } else {
+            // Spawn quái thường (không spawn boss nữa)
+            const tempWave = isBossWave ? state.wave - 1 : state.wave; // Không cho boss spawn thêm
+            state.enemies.push(new Enemy(tempWave));
+            spawned++;
+        }
+        
+        if (spawned >= count) clearInterval(state.spawnTimer);
+    }, 900 / state.speed);
+}
+
+function update() {
+    if (state.paused || state.gameOver) return;
+
+    state.enemies = state.enemies.filter(e => {
+        e.update();
+        if (e.hp <= 0) {
+            if (e.hp !== -1) { 
+                state.gold += e.reward; 
+                createParticles(e.x, e.y, e.color);
+                updateUI(); 
+            }
+            return false;
+        }
+        return true;
+    });
+
+    state.particles = state.particles.filter(p => {
+        p.x += p.vx; p.y += p.vy; p.life--;
+        return p.life > 0;
+    });
+
+    if (state.waveActive && state.enemies.length === 0) {
+        state.waveActive = false;
+        state.gold += 25 + state.wave * 5;
+        updateUI();
+        
+        if (state.wave >= MAX_WAVES) {
+            triggerVictory();
+            return;
+        }
+
+        if (state.auto) setTimeout(() => { if(!state.waveActive && state.auto) startWave(); }, 1200);
+    }
+
+    state.towers.forEach(t => {
+        if (t.cooldown > 0) t.cooldown -= state.speed;
+        
+        if (t.isFarm && t.cooldown <= 0) {
+            state.gold += t.goldPerTick;
+            createParticles(t.x, t.y, '#ffff00', 4);
+            t.cooldown = t.fireRate;
+            updateUI();
+        }
+
+        if (!t.isFarm) {
+            if (!t.target || Math.hypot(t.x-t.target.x, t.y-t.target.y) > t.range || t.target.hp <= 0) {
+                t.target = null;
+                
+                // Chọn target theo chế độ targeting
+                const enemiesInRange = state.enemies.filter(e => Math.hypot(t.x-e.x, t.y-e.y) <= t.range);
+                
+                if(enemiesInRange.length > 0) {
+                    if(t.targeting === 'first') {
+                        // Mục tiêu đi xa nhất
+                        let maxDist = -1;
+                        for(let e of enemiesInRange) {
+                            if(e.distance > maxDist) { maxDist = e.distance; t.target = e; }
+                        }
+                    } else if(t.targeting === 'last') {
+                        // Mục tiêu mới vào nhất
+                        let minDist = Infinity;
+                        for(let e of enemiesInRange) {
+                            if(e.distance < minDist) { minDist = e.distance; t.target = e; }
+                        }
+                    } else if(t.targeting === 'strong') {
+                        // Mục tiêu máu nhiều nhất
+                        let maxHp = -1;
+                        for(let e of enemiesInRange) {
+                            if(e.hp > maxHp) { maxHp = e.hp; t.target = e; }
+                        }
+                    } else if(t.targeting === 'weak') {
+                        // Mục tiêu máu ít nhất
+                        let minHp = Infinity;
+                        for(let e of enemiesInRange) {
+                            if(e.hp < minHp) { minHp = e.hp; t.target = e; }
+                        }
+                    } else if(t.targeting === 'close') {
+                        // Mục tiêu gần nhất
+                        let minDist = Infinity;
+                        for(let e of enemiesInRange) {
+                            let d = Math.hypot(t.x-e.x, t.y-e.y);
+                            if(d < minDist) { minDist = d; t.target = e; }
+                        }
+                    } else if(t.targeting === 'random') {
+                        // Random
+                        t.target = enemiesInRange[Math.floor(Math.random() * enemiesInRange.length)];
+                    }
+                }
+            }
+
+            if (t.target && t.cooldown <= 0) {
+                if (t.isAoe) {
+                    let angle = Math.atan2(t.target.y - t.y, t.target.x - t.x);
+                    state.enemies.forEach(e => {
+                        let d = Math.hypot(t.x-e.x, t.y-e.y);
+                        if (d <= t.range) {
+                            let enemyAngle = Math.atan2(e.y - t.y, e.x - t.x);
+                            let diff = Math.abs(angle - enemyAngle);
+                            if (diff < (t.aoeAngle * Math.PI / 360)) {
+                                e.hp -= t.damage * state.speed;
+                            }
+                        }
+                    });
+                    t.cooldown = t.fireRate;
+                } else if(t.isExplosive) {
+                    state.projectiles.push({
+                        x: t.x, y: t.y, target: t.target, damage: t.damage, 
+                        isBomb: true, splash: t.splashRadius,
+                        color: t.color, speed: 9, history: []
+                    });
+                    t.cooldown = t.fireRate;
+                } else {
+                    state.projectiles.push({
+                        x: t.x, y: t.y, target: t.target, damage: t.damage, slow: t.isSlow, 
+                        color: t.color, speed: 15, history: []
+                    });
+                    t.cooldown = t.fireRate;
+                }
+            }
+        }
+    });
+
+    state.projectiles = state.projectiles.filter(p => {
+        for(let i=0; i<state.speed; i++) {
+            p.history.push({x: p.x, y: p.y});
+            if(p.history.length > 6) p.history.shift();
+            let angle = Math.atan2(p.target.y-p.y, p.target.x-p.x);
+            p.x += Math.cos(angle) * p.speed; p.y += Math.sin(angle) * p.speed;
+            if (Math.hypot(p.x-p.target.x, p.y-p.target.y) < 15) {
+                if(p.isBomb) {
+                    createParticles(p.x, p.y, '#ffff00', 10);
+                    state.enemies.forEach(e => {
+                        if(Math.hypot(e.x-p.x, e.y-p.y) <= p.splash) e.hp -= p.damage;
+                    });
+                } else {
+                    p.target.hp -= p.damage;
+                    if(p.slow) { p.target.speed = p.target.baseSpeed * 0.5; p.target.slowTimer = 60; }
+                }
+                return false;
+            }
+        }
+        return true;
+    });
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const map = MAP_DATA[state.currentMap];
+
+    map.decor.forEach(d => {
+        ctx.fillStyle = 'rgba(255,255,255,0.02)';
+        ctx.beginPath(); ctx.arc(d.x, d.y, 40, 0, Math.PI*2); ctx.fill();
+    });
+
+    ctx.shadowBlur = 15; ctx.shadowColor = map.color;
+    ctx.strokeStyle = '#0a0a1a'; ctx.lineWidth = 50; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); map.path.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
+    ctx.strokeStyle = map.color; ctx.lineWidth = 2; ctx.globalAlpha = 0.3;
+    ctx.stroke(); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    
+    const b = map.base;
+    ctx.save();
+    ctx.shadowBlur = 20; ctx.shadowColor = state.health > 5 ? '#00f2ff' : '#ff0055';
+    ctx.fillStyle = state.health > 5 ? '#00f2ff' : '#ff0055';
+    ctx.translate(b.x, b.y);
+    ctx.beginPath(); ctx.moveTo(-20, 15); ctx.lineTo(20, 15); ctx.lineTo(0, -25); ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Vẽ thanh máu Boss trên màn hình (nếu có boss)
+    const boss = state.enemies.find(e => e.isBoss());
+    if(boss) {
+        const bossBarWidth = 400;
+        const bossBarHeight = 25;
+        const bossBarX = (canvas.width - bossBarWidth) / 2;
+        const bossBarY = 20;
+        
+        // Nền thanh máu
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(bossBarX - 5, bossBarY - 5, bossBarWidth + 10, bossBarHeight + 10);
+        
+        // Viền
+        ctx.strokeStyle = '#FF0000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bossBarX - 5, bossBarY - 5, bossBarWidth + 10, bossBarHeight + 10);
+        
+        // Thanh máu nền
+        ctx.fillStyle = 'rgba(100, 0, 0, 0.5)';
+        ctx.fillRect(bossBarX, bossBarY, bossBarWidth, bossBarHeight);
+        
+        // Thanh máu hiện tại
+        const hpPercent = boss.hp / boss.maxHp;
+        ctx.fillStyle = hpPercent > 0.5 ? '#FF0000' : (hpPercent > 0.25 ? '#FF6600' : '#FF00FF');
+        ctx.fillRect(bossBarX, bossBarY, bossBarWidth * hpPercent, bossBarHeight);
+        
+        // Tên Boss
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 3;
+        ctx.strokeText('CHÍ DƯƠNG ROBLOX CALO', canvas.width / 2, bossBarY - 10);
+        ctx.fillText('CHÍ DƯƠNG ROBLOX CALO', canvas.width / 2, bossBarY - 10);
+        
+        // Hiển thị HP số
+        ctx.font = 'bold 11px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        const hpText = `${Math.ceil(boss.hp)} / ${Math.ceil(boss.maxHp)}`;
+        ctx.strokeText(hpText, canvas.width / 2, bossBarY + 17);
+        ctx.fillText(hpText, canvas.width / 2, bossBarY + 17);
+    }
+
+    state.towers.forEach(t => {
+        ctx.save();
+        ctx.shadowBlur = 10; ctx.shadowColor = t.color;
+        ctx.fillStyle = '#050510'; ctx.strokeStyle = t.color; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.roundRect(t.x-18, t.y-18, 36, 36, 6); ctx.fill(); ctx.stroke();
+        
+        if (t.isFarm) {
+            ctx.fillStyle = t.color;
+            ctx.font = "18px Arial";
+            ctx.fillText("💰", t.x - 10, t.y + 7);
+        } else if(t.target) {
+            let angle = Math.atan2(t.target.y - t.y, t.target.x - t.x);
+            ctx.translate(t.x, t.y); ctx.rotate(angle);
+            ctx.fillStyle = t.color;
+            if(t.isAoe) {
+                ctx.fillRect(0, -6, 25, 12);
+                ctx.fillStyle = 'rgba(255, 100, 0, 0.4)';
+                ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(60, -25); ctx.lineTo(60, 25); ctx.closePath(); ctx.fill();
+            } else if(t.isExplosive) {
+                ctx.fillRect(0, -8, 22, 16);
+            } else {
+                ctx.fillRect(0, -4, 22, 8);
+            }
+        }
+        ctx.restore();
+        
+        if(state.inspecting === t) {
+            ctx.beginPath(); ctx.arc(t.x, t.y, t.range, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(0, 242, 255, 0.05)'; ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 242, 255, 0.2)'; ctx.stroke();
+        }
+    });
+
+    state.enemies.forEach(e => e.draw());
+
+    state.projectiles.forEach(p => {
+        ctx.beginPath();
+        p.history.forEach((h, i) => {
+            ctx.globalAlpha = i / p.history.length;
+            ctx.fillStyle = p.color;
+            ctx.arc(h.x, h.y, (p.isBomb ? 4 : 2) + i, 0, Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha = 1; ctx.shadowBlur = 10; ctx.shadowColor = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.isBomb ? 8 : 5, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+    });
+
+    state.particles.forEach(p => {
+        ctx.globalAlpha = p.life / 40;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 3, 3);
+    });
+    ctx.globalAlpha = 1;
+
+    if(state.selectedType) {
+        ctx.save(); ctx.globalAlpha = 0.2; ctx.fillStyle = '#0f0';
+        let stats = TOWER_TYPES[state.selectedType];
+        ctx.beginPath(); ctx.arc(state.mouseX, state.mouseY, stats.range, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 0.8; ctx.strokeStyle = '#0f0'; ctx.setLineDash([5, 5]);
+        ctx.strokeRect(state.mouseX-18, state.mouseY-18, 36, 36);
+        ctx.restore();
+    }
+
+    if(state.paused && !state.gameOver) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 40px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("ĐÃ TẠM DỪNG", canvas.width/2, canvas.height/2);
+    }
+}
+
+function updateUI() {
+    document.getElementById('goldDisp').textContent = Math.floor(state.gold);
+    document.getElementById('healthDisp').textContent = state.health;
+    
+    // Hiển thị wave theo mode
+    if(state.difficulty === 'endless') {
+        document.getElementById('waveDisp').textContent = state.wave + " / ∞";
+    } else {
+        document.getElementById('waveDisp').textContent = state.wave + "/" + MAX_WAVES;
+    }
+    
+    const p = document.getElementById('infoPanel');
+    const uBtn = document.getElementById('upgradeBtn');
+    if(state.inspecting) {
+        p.style.display = 'block';
+        let isMax = state.inspecting.level >= state.inspecting.maxLevel;
+        document.getElementById('infoTitle').textContent = `LV.${state.inspecting.level} ${state.inspecting.name}`;
+        
+        if(state.inspecting.isFarm) {
+            document.getElementById('infoStats').innerHTML = `THU NHẬP: +${Math.round(state.inspecting.goldPerTick)}💰<br>LEVEL MAX: ${state.inspecting.maxLevel}<br><br>MỤC TIÊU: Không`;
+        } else {
+            // Tên chế độ targeting
+            const targetNames = {
+                'first': 'Đầu tiên',
+                'last': 'Cuối cùng', 
+                'strong': 'Mạnh nhất',
+                'weak': 'Yếu nhất',
+                'close': 'Gần nhất',
+                'random': 'Ngẫu nhiên'
+            };
+            document.getElementById('infoStats').innerHTML = `SÁT THƯƠNG: ${Math.round(state.inspecting.damage)}<br>TẦM BẮN: ${Math.round(state.inspecting.range)}<br>LEVEL MAX: ${state.inspecting.maxLevel}<br><br>MỤC TIÊU: <span style="color: #00f2ff">${targetNames[state.inspecting.targeting]}</span>`;
+        }
+        
+        if (isMax) {
+            uBtn.textContent = "LEVEL TỐI ĐA";
+            uBtn.disabled = true;
+        } else {
+            let cost = Math.floor(60 * state.inspecting.level * 1.5);
+            uBtn.textContent = `NÂNG CẤP (${cost}💰)`;
+            uBtn.disabled = false;
+        }
+    } else p.style.display = 'none';
+}
+
+function resizeCanvas() {
+    if (window.innerWidth < 1024) {
+        canvas.width = window.innerWidth - 40;
+        canvas.height = (canvas.width / 850) * 600;
+    } else {
+        canvas.width = 850;
+        canvas.height = 600;
+    }
+    // Adjust paths and positions if necessary, but for simplicity, assume scaling in draw
+    // Note: To properly scale, you may need to scale ctx, but this is basic adjustment
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+document.getElementById('btnSpeed').onclick = function() {
+    state.speed = state.speed === 1 ? 2 : (state.speed === 2 ? 4 : 1);
+    this.textContent = `TỐC ĐỘ X${state.speed}`;
+    this.classList.toggle('active', state.speed > 1);
+};
+document.getElementById('btnAuto').onclick = function() {
+    state.auto = !state.auto;
+    this.textContent = `AUTO: ${state.auto ? 'ON' : 'OFF'}`;
+    this.classList.toggle('active', state.auto);
+};
+document.getElementById('btnPause').onclick = function() {
+    if(state.gameOver) return;
+    state.paused = !state.paused;
+    if(state.paused) {
+        document.getElementById('pauseMenu').classList.add('active');
+    } else {
+        document.getElementById('pauseMenu').classList.remove('active');
+    }
+    this.textContent = state.paused ? "TIẾP TỤC" : "TẠM DỪNG";
+    this.classList.toggle('active', state.paused);
+};
+document.getElementById('waveBtn').onclick = startWave;
+
+function handleMove(e) {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    state.mouseX = (e.clientX || e.touches[0].clientX) - r.left;
+    state.mouseY = (e.clientY || e.touches[0].clientY) - r.top;
+}
+
+function handleDown(e) {
+    e.preventDefault();
+    handleMove(e);
+    if(state.paused || state.gameOver) return;
+    if(state.selectedType) {
+        let proto = TOWER_TYPES[state.selectedType];
+        if(state.gold >= proto.cost) {
+            state.gold -= proto.cost;
+            let t = {...proto, x: state.mouseX, y: state.mouseY, level: 1, cooldown: 0, target: null};
+            state.towers.push(t);
+            state.selectedType = null; updateUI();
+            document.querySelectorAll('.tower-btn').forEach(b => b.classList.remove('active'));
+        }
+    } else {
+        state.inspecting = state.towers.find(t => Math.hypot(t.x-state.mouseX, t.y-state.mouseY) < 25);
+        
+        // Hiển thị/ẩn panel chọn mục tiêu
+        if(state.inspecting && !state.inspecting.isFarm) {
+            document.getElementById('targetingPanel').style.display = 'block';
+            document.getElementById('targetingSelect').value = state.inspecting.targeting;
+        } else {
+            document.getElementById('targetingPanel').style.display = 'none';
+        }
+        
+        updateUI();
+    }
+}
+
+canvas.addEventListener('mousemove', handleMove);
+canvas.addEventListener('touchmove', handleMove, { passive: false });
+canvas.addEventListener('mousedown', handleDown);
+canvas.addEventListener('touchstart', handleDown, { passive: false });
+
+document.getElementById('targetingSelect').onchange = function() {
+    if(state.inspecting) {
+        state.inspecting.targeting = this.value;
+        state.inspecting.target = null; // Reset target
+        updateUI();
+    }
+};
+
+document.querySelectorAll('.tower-btn').forEach(b => b.onclick = function() {
+    state.selectedType = this.dataset.type;
+    document.querySelectorAll('.tower-btn').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+});
+
+document.getElementById('upgradeBtn').onclick = () => {
+    if(!state.inspecting) return;
+    if(state.inspecting.level >= state.inspecting.maxLevel) return;
+    let cost = Math.floor(60 * state.inspecting.level * 1.5);
+    if(state.gold >= cost) {
+        state.gold -= cost; state.inspecting.level++;
+        if(state.inspecting.isFarm) {
+            state.inspecting.goldPerTick *= 1.4;
+        } else {
+            state.inspecting.damage *= 1.25; state.inspecting.range *= 1.04; 
+            if(state.inspecting.splashRadius) state.inspecting.splashRadius *= 1.08;
+        }
+        updateUI();
+    }
+};
+
+document.getElementById('sellBtn').onclick = () => {
+    if(!state.inspecting) return;
+    state.gold += Math.floor(state.inspecting.cost * 0.6);
+    state.towers = state.towers.filter(t => t !== state.inspecting);
+    state.inspecting = null; updateUI();
+};
+
+function loop() {
+    if(document.getElementById('gameWrapper').classList.contains('active')) {
+        update(); draw();
+    }
+    requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
